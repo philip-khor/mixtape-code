@@ -18,40 +18,47 @@ dat <- tibble(
 # run the regression
 reg <- lm(y ~ x, data = dat)
 
+coefs <- tidy(reg) %>% pull(estimate) 
+names(coefs) <- tidy(reg) %>% pull(term)
+
 # fitted values and residuals (two ways to recover them)
-dat %<>% mutate(
-  yhat1 = predict(reg) %>% unname(),
-  yhat2 = coef(reg)[1] + coef(reg)[2] * x,
-  uhat1 = reg$residuals %>% unname(),
-  uhat2 = y - yhat2
-  )
+preds_resids <- reg %>% 
+  augment() %>% 
+  mutate(yhat1 = .fitted,
+         yhat2 = coefs["(Intercept)"] + coefs["x"] * dat$x,
+         uhat1 = .resid,
+         uhat2 = y - yhat2)
 
 # check equality
-all.equal(dat$yhat1, dat$yhat2) & all.equal(dat$uhat1, dat$uhat2)
+preds_resids %>% 
+  summarise(all.equal(yhat1, yhat2) & all.equal(uhat1, uhat2))
 ```
 
-    ## [1] TRUE
+    ## # A tibble: 1 x 1
+    ##   `all.equal(yhat1, yhat2) & all.equal(uhat1, uhat2)`
+    ##   <lgl>                                              
+    ## 1 TRUE
 
 ``` r
 # figure 3
-ggplot(dat, aes(x, y)) +
+ggplot(preds_resids, aes(x, y)) +
   geom_point(alpha = 0.5) +
-  stat_smooth(method = 'lm', col = ipsum_pal()(1)) +
+  geom_smooth(method = 'lm', col = ipsum_pal()(1)) +
   labs(title = 'OLS Regression Line') +
   theme_ipsum()
 ```
 
-![](../fig/ols_line-1.png)<!-- -->
+![](../fig/ols1-1.png)<!-- -->
 
 ``` r
 # figure 4
-ggplot(dat, aes(yhat1, uhat1)) +
+ggplot(preds_resids, aes(yhat1, uhat1)) +
   geom_point(alpha = 0.5) +
   labs(x = 'Fitted Values', y = 'Residuals') +
   theme_ipsum()
 ```
 
-![](../fig/ols_line-2.png)<!-- -->
+![](../fig/ols1-2.png)<!-- -->
 
 ## Algebraic properties of OLS
 
@@ -65,145 +72,118 @@ dat <- tibble(
   y = 3 + 2 * x + u
   )
 
-# run the regression
 reg <- lm(y ~ x, data = dat)
 
-# algebraic calculations
-dat %<>% mutate(
-  yhat = predict(reg) %>% unname(),
-  uhat = reg$residuals %>% unname(),
-  x_uhat = x * uhat,
-  yhat_uhat = yhat * uhat
-  )
-
-# table 6
-out <- rbind(dat, colSums(dat))
-out %<>% cbind(tibble(no = c(1:10, 'Sum')), .)
-names(out) <- c(
-  names(out)[1:4],
-  'hat y',
-  'hat u',
-  'hat x hat u',
-  'hat y hat u'
-  )
-stargazer(out, digits = 3, rownames = F, summary = F, type = 'html')
+# fitted values and residuals (two ways to recover them)
+reg %>% 
+  augment() %>% 
+  mutate(id = row_number(),
+         yhat = .fitted,
+         uhat = .resid,
+         x_uhat = x * uhat, 
+         yhat_uhat = yhat * uhat) %>% 
+  select(id, x, uhat, y, yhat, uhat, x_uhat, yhat_uhat) %>% 
+  adorn_totals() %>% 
+  adorn_rounding(digits = 3) %>% 
+  # styling table
+  knitr::kable() %>% 
+  kable_styling() %>% 
+  row_spec(11, bold = TRUE)
 ```
 
-<table style="text-align:center">
+<table class="table" style="margin-left: auto; margin-right: auto;">
+
+<thead>
 
 <tr>
 
-<td colspan="8" style="border-bottom: 1px solid black">
+<th style="text-align:left;">
 
-</td>
+id
 
-</tr>
+</th>
 
-<tr>
-
-<td style="text-align:left">
-
-no
-
-</td>
-
-<td>
+<th style="text-align:right;">
 
 x
 
-</td>
+</th>
 
-<td>
+<th style="text-align:right;">
 
-u
+uhat
 
-</td>
+</th>
 
-<td>
+<th style="text-align:right;">
 
 y
 
-</td>
+</th>
 
-<td>
+<th style="text-align:right;">
 
-hat y
+yhat
 
-</td>
+</th>
 
-<td>
+<th style="text-align:right;">
 
-hat u
+x\_uhat
 
-</td>
+</th>
 
-<td>
+<th style="text-align:right;">
 
-hat x hat u
+yhat\_uhat
 
-</td>
-
-<td>
-
-hat y hat u
-
-</td>
+</th>
 
 </tr>
 
-<tr>
+</thead>
 
-<td colspan="8" style="border-bottom: 1px solid black">
-
-</td>
-
-</tr>
+<tbody>
 
 <tr>
 
-<td style="text-align:left">
+<td style="text-align:left;">
 
 1
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 \-10.864
 
 </td>
 
-<td>
-
-\-17.179
-
-</td>
-
-<td>
-
-\-35.906
-
-</td>
-
-<td>
-
-\-17.409
-
-</td>
-
-<td>
+<td style="text-align:right;">
 
 \-18.497
 
 </td>
 
-<td>
+<td style="text-align:right;">
+
+\-35.906
+
+</td>
+
+<td style="text-align:right;">
+
+\-17.409
+
+</td>
+
+<td style="text-align:right;">
 
 200.948
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 322.016
 
@@ -213,49 +193,43 @@ hat y hat u
 
 <tr>
 
-<td style="text-align:left">
+<td style="text-align:left;">
 
 2
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 2.497
 
 </td>
 
-<td>
-
-\-35.942
-
-</td>
-
-<td>
-
-\-27.948
-
-</td>
-
-<td>
-
-\-0.728
-
-</td>
-
-<td>
+<td style="text-align:right;">
 
 \-27.220
 
 </td>
 
-<td>
+<td style="text-align:right;">
+
+\-27.948
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.728
+
+</td>
+
+<td style="text-align:right;">
 
 \-67.964
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 19.826
 
@@ -265,49 +239,43 @@ hat y hat u
 
 <tr>
 
-<td style="text-align:left">
+<td style="text-align:left;">
 
 3
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 9.760
 
 </td>
 
-<td>
-
-\-27.945
-
-</td>
-
-<td>
-
-\-5.425
-
-</td>
-
-<td>
-
-8.340
-
-</td>
-
-<td>
+<td style="text-align:right;">
 
 \-13.765
 
 </td>
 
-<td>
+<td style="text-align:right;">
+
+\-5.425
+
+</td>
+
+<td style="text-align:right;">
+
+8.340
+
+</td>
+
+<td style="text-align:right;">
 
 \-134.343
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 \-114.792
 
@@ -317,49 +285,43 @@ hat y hat u
 
 <tr>
 
-<td style="text-align:left">
+<td style="text-align:left;">
 
 4
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 \-21.111
 
 </td>
 
-<td>
-
-2.321
-
-</td>
-
-<td>
-
-\-36.902
-
-</td>
-
-<td>
-
-\-30.203
-
-</td>
-
-<td>
+<td style="text-align:right;">
 
 \-6.699
 
 </td>
 
-<td>
+<td style="text-align:right;">
+
+\-36.902
+
+</td>
+
+<td style="text-align:right;">
+
+\-30.203
+
+</td>
+
+<td style="text-align:right;">
 
 141.428
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 202.334
 
@@ -369,49 +331,43 @@ hat y hat u
 
 <tr>
 
-<td style="text-align:left">
+<td style="text-align:left;">
 
 5
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 3.862
 
 </td>
 
-<td>
-
-34.542
-
-</td>
-
-<td>
-
-45.266
-
-</td>
-
-<td>
-
-0.976
-
-</td>
-
-<td>
+<td style="text-align:right;">
 
 44.290
 
 </td>
 
-<td>
+<td style="text-align:right;">
+
+45.266
+
+</td>
+
+<td style="text-align:right;">
+
+0.976
+
+</td>
+
+<td style="text-align:right;">
 
 171.053
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 43.233
 
@@ -421,49 +377,43 @@ hat y hat u
 
 <tr>
 
-<td style="text-align:left">
+<td style="text-align:left;">
 
 6
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 4.555
 
 </td>
 
-<td>
-
-\-3.970
-
-</td>
-
-<td>
-
-8.139
-
-</td>
-
-<td>
-
-1.841
-
-</td>
-
-<td>
+<td style="text-align:right;">
 
 6.298
 
 </td>
 
-<td>
+<td style="text-align:right;">
+
+8.139
+
+</td>
+
+<td style="text-align:right;">
+
+1.841
+
+</td>
+
+<td style="text-align:right;">
 
 28.685
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 11.592
 
@@ -473,49 +423,43 @@ hat y hat u
 
 <tr>
 
-<td style="text-align:left">
+<td style="text-align:left;">
 
 7
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 \-5.173
 
 </td>
 
-<td>
-
-\-18.396
-
-</td>
-
-<td>
-
-\-25.742
-
-</td>
-
-<td>
-
-\-10.304
-
-</td>
-
-<td>
+<td style="text-align:right;">
 
 \-15.438
 
 </td>
 
-<td>
+<td style="text-align:right;">
+
+\-25.742
+
+</td>
+
+<td style="text-align:right;">
+
+\-10.304
+
+</td>
+
+<td style="text-align:right;">
 
 79.855
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 159.068
 
@@ -525,49 +469,43 @@ hat y hat u
 
 <tr>
 
-<td style="text-align:left">
+<td style="text-align:left;">
 
 8
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 \-4.920
 
 </td>
 
-<td>
-
-\-32.803
-
-</td>
-
-<td>
-
-\-39.642
-
-</td>
-
-<td>
-
-\-9.988
-
-</td>
-
-<td>
+<td style="text-align:right;">
 
 \-29.655
 
 </td>
 
-<td>
+<td style="text-align:right;">
+
+\-39.642
+
+</td>
+
+<td style="text-align:right;">
+
+\-9.988
+
+</td>
+
+<td style="text-align:right;">
 
 145.891
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 296.185
 
@@ -577,49 +515,43 @@ hat y hat u
 
 <tr>
 
-<td style="text-align:left">
+<td style="text-align:left;">
 
 9
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 \-5.080
 
 </td>
 
-<td>
-
-\-30.138
-
-</td>
-
-<td>
-
-\-37.298
-
-</td>
-
-<td>
-
-\-10.188
-
-</td>
-
-<td>
+<td style="text-align:right;">
 
 \-27.110
 
 </td>
 
-<td>
+<td style="text-align:right;">
+
+\-37.298
+
+</td>
+
+<td style="text-align:right;">
+
+\-10.188
+
+</td>
+
+<td style="text-align:right;">
 
 137.722
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 276.201
 
@@ -629,51 +561,45 @@ hat y hat u
 
 <tr>
 
-<td style="text-align:left">
+<td style="text-align:left;">
 
 10
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
 \-8.010
 
 </td>
 
-<td>
-
-86.970
-
-</td>
-
-<td>
-
-73.949
-
-</td>
-
-<td>
-
-\-13.846
-
-</td>
-
-<td>
+<td style="text-align:right;">
 
 87.796
 
 </td>
 
-<td>
+<td style="text-align:right;">
+
+73.949
+
+</td>
+
+<td style="text-align:right;">
+
+\-13.846
+
+</td>
+
+<td style="text-align:right;">
 
 \-703.275
 
 </td>
 
-<td>
+<td style="text-align:right;">
 
-\-1,215.665
+\-1215.665
 
 </td>
 
@@ -681,63 +607,51 @@ hat y hat u
 
 <tr>
 
-<td style="text-align:left">
+<td style="text-align:left;font-weight: bold;">
 
-Sum
+Total
 
 </td>
 
-<td>
+<td style="text-align:right;font-weight: bold;">
 
 \-34.484
 
 </td>
 
-<td>
+<td style="text-align:right;font-weight: bold;">
 
-\-42.541
+0.000
 
 </td>
 
-<td>
+<td style="text-align:right;font-weight: bold;">
 
 \-81.510
 
 </td>
 
-<td>
+<td style="text-align:right;font-weight: bold;">
 
 \-81.510
 
 </td>
 
-<td>
+<td style="text-align:right;font-weight: bold;">
 
-\-0
-
-</td>
-
-<td>
-
-\-0
+0.000
 
 </td>
 
-<td>
+<td style="text-align:right;font-weight: bold;">
 
-\-0
+0.000
 
 </td>
 
 </tr>
 
-<tr>
-
-<td colspan="8" style="border-bottom: 1px solid black">
-
-</td>
-
-</tr>
+</tbody>
 
 </table>
 
@@ -750,28 +664,194 @@ ols <- function(...) {
     x = 9 * rnorm(1E4, 0, 1),
     u = 36 * rnorm(1E4, 0, 1),
     y = 3 + 2 * x + u
-    )
-  reg <- lm(y ~ x, data = dat)
-  return(coef(reg)['x'])
+    ) %>% 
+    lm(y ~ x, data = .)
 }
 
-# simulate
-beta <- replicate(1E3, ols()) ; skim(beta)
+
+betas_df <- map_df(1:1E3, ~ tidy(ols(.)), .id = "id") %>% 
+  unnest() %>% 
+  filter(term == "x") %>% 
+  select(beta = estimate) 
+
+skim(betas_df) %>% skimr::kable()
 ```
 
-    ## 
-    ## Skim summary statistics
-    ## 
-    ## ── Variable type:numeric ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    ##  variable missing complete    n mean    sd   p0  p25 p50  p75 p100
-    ##      beta       0     1000 1000    2 0.041 1.87 1.97   2 2.03 2.13
-    ##      hist
-    ##  ▁▁▃▇▇▆▁▁
+Skim summary statistics  
+n obs: 1000  
+n variables: 1
+
+Variable type: numeric
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>
+
+variable
+
+</th>
+
+<th>
+
+missing
+
+</th>
+
+<th>
+
+complete
+
+</th>
+
+<th>
+
+n
+
+</th>
+
+<th>
+
+mean
+
+</th>
+
+<th>
+
+sd
+
+</th>
+
+<th>
+
+p0
+
+</th>
+
+<th>
+
+p25
+
+</th>
+
+<th>
+
+p50
+
+</th>
+
+<th>
+
+p75
+
+</th>
+
+<th>
+
+p100
+
+</th>
+
+<th>
+
+hist
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td>
+
+beta
+
+</td>
+
+<td>
+
+0
+
+</td>
+
+<td>
+
+1000
+
+</td>
+
+<td>
+
+1000
+
+</td>
+
+<td>
+
+2
+
+</td>
+
+<td>
+
+0.041
+
+</td>
+
+<td>
+
+1.87
+
+</td>
+
+<td>
+
+1.97
+
+</td>
+
+<td>
+
+2
+
+</td>
+
+<td>
+
+2.03
+
+</td>
+
+<td>
+
+2.13
+
+</td>
+
+<td>
+
+▁▁▃▇▇▆▁▁
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
 
 ``` r
 # figure 5
-ggplot(tibble(x = beta)) +
-  geom_histogram(aes(x)) +
+ggplot(betas_df, aes(x = beta)) +
+  geom_histogram() +
+  geom_vline(xintercept = 2, col = "red") + 
   labs(x = 'Beta', y = 'Count') +
   theme_ipsum()
 ```
@@ -781,9 +861,6 @@ ggplot(tibble(x = beta)) +
 ## Regression anatomy
 
 ``` r
-library(haven)
-library(broom)
-
 # auto dataset
 auto <- read_dta('http://www.stata-press.com/data/r8/auto.dta') %>% 
   zap_formats() %>% 
@@ -819,7 +896,7 @@ coefs %>%
 ``` r
 # OLS estimator 
 auto %>% 
-  summarise(beta = cov(price, length_resid)/var(length_resid))
+  summarise(beta = cov(price, length_resid) / var(length_resid))
 ```
 
     ## # A tibble: 1 x 1

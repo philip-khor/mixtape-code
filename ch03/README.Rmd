@@ -24,10 +24,14 @@ knitr::opts_chunk$set(
 
 library(hrbrthemes)
 library(mixtape)
-library(stargazer)
 library(tidyverse)
 library(magrittr)
+library(janitor)
 library(skimr)
+library(haven)
+library(broom)
+library(kableExtra)
+library(broom)
 ```
 
 ## OLS regression line
@@ -46,26 +50,34 @@ dat <- tibble(
 # run the regression
 reg <- lm(y ~ x, data = dat)
 
+coefs <- tidy(reg) %>% pull(estimate) 
+names(coefs) <- tidy(reg) %>% pull(term)
+
 # fitted values and residuals (two ways to recover them)
-dat %<>% mutate(
-  yhat1 = predict(reg) %>% unname(),
-  yhat2 = coef(reg)[1] + coef(reg)[2] * x,
-  uhat1 = reg$residuals %>% unname(),
-  uhat2 = y - yhat2
-  )
+preds_resids <- reg %>% 
+  augment() %>% 
+  mutate(yhat1 = .fitted,
+         yhat2 = coefs["(Intercept)"] + coefs["x"] * dat$x,
+         uhat1 = .resid,
+         uhat2 = y - yhat2)
 
 # check equality
-all.equal(dat$yhat1, dat$yhat2) & all.equal(dat$uhat1, dat$uhat2)
+preds_resids %>% 
+  summarise(all.equal(yhat1, yhat2) & all.equal(uhat1, uhat2))
+```
 
+
+
+```{r ols1}
 # figure 3
-ggplot(dat, aes(x, y)) +
+ggplot(preds_resids, aes(x, y)) +
   geom_point(alpha = 0.5) +
-  stat_smooth(method = 'lm', col = ipsum_pal()(1)) +
+  geom_smooth(method = 'lm', col = ipsum_pal()(1)) +
   labs(title = 'OLS Regression Line') +
   theme_ipsum()
 
 # figure 4
-ggplot(dat, aes(yhat1, uhat1)) +
+ggplot(preds_resids, aes(yhat1, uhat1)) +
   geom_point(alpha = 0.5) +
   labs(x = 'Fitted Values', y = 'Residuals') +
   theme_ipsum()
@@ -73,7 +85,7 @@ ggplot(dat, aes(yhat1, uhat1)) +
 
 ## Algebraic properties of OLS
 
-```{r ols_prop, results = 'asis'}
+```{r ols_prop, results='asis'}
 
 set.seed(1234)
 
@@ -84,33 +96,29 @@ dat <- tibble(
   y = 3 + 2 * x + u
   )
 
-# run the regression
 reg <- lm(y ~ x, data = dat)
 
-# algebraic calculations
-dat %<>% mutate(
-  yhat = predict(reg) %>% unname(),
-  uhat = reg$residuals %>% unname(),
-  x_uhat = x * uhat,
-  yhat_uhat = yhat * uhat
-  )
-
-# table 6
-out <- rbind(dat, colSums(dat))
-out %<>% cbind(tibble(no = c(1:10, 'Sum')), .)
-names(out) <- c(
-  names(out)[1:4],
-  'hat y',
-  'hat u',
-  'hat x hat u',
-  'hat y hat u'
-  )
-stargazer(out, digits = 3, rownames = F, summary = F, type = 'html')
+# fitted values and residuals (two ways to recover them)
+reg %>% 
+  augment() %>% 
+  mutate(id = row_number(),
+         yhat = .fitted,
+         uhat = .resid,
+         x_uhat = x * uhat, 
+         yhat_uhat = yhat * uhat) %>% 
+  select(id, x, uhat, y, yhat, uhat, x_uhat, yhat_uhat) %>% 
+  adorn_totals() %>% 
+  adorn_rounding(digits = 3) %>% 
+  # styling table
+  knitr::kable() %>% 
+  kable_styling() %>% 
+  row_spec(11, bold = TRUE)
 ```
+
 
 ## Expected value of OLS
 
-```{r ols_value}
+```{r ols_value, results='asis'}
 
 # ols function
 ols <- function(...) {
@@ -118,17 +126,22 @@ ols <- function(...) {
     x = 9 * rnorm(1E4, 0, 1),
     u = 36 * rnorm(1E4, 0, 1),
     y = 3 + 2 * x + u
-    )
-  reg <- lm(y ~ x, data = dat)
-  return(coef(reg)['x'])
+    ) %>% 
+    lm(y ~ x, data = .)
 }
 
-# simulate
-beta <- replicate(1E3, ols()) ; skim(beta)
+
+betas_df <- map_df(1:1E3, ~ tidy(ols(.)), .id = "id") %>% 
+  unnest() %>% 
+  filter(term == "x") %>% 
+  select(beta = estimate) 
+
+skim(betas_df) %>% skimr::kable()
 
 # figure 5
-ggplot(tibble(x = beta)) +
-  geom_histogram(aes(x)) +
+ggplot(betas_df, aes(x = beta)) +
+  geom_histogram() +
+  geom_vline(xintercept = 2, col = "red") + 
   labs(x = 'Beta', y = 'Count') +
   theme_ipsum()
 ```
@@ -136,9 +149,6 @@ ggplot(tibble(x = beta)) +
 ## Regression anatomy
 
 ```{r ols_anatomy}
-library(haven)
-library(broom)
-
 # auto dataset
 auto <- read_dta('http://www.stata-press.com/data/r8/auto.dta') %>% 
   zap_formats() %>% 
@@ -165,7 +175,7 @@ coefs %>%
 
 # OLS estimator 
 auto %>% 
-  summarise(beta = cov(price, length_resid)/var(length_resid))
+  summarise(beta = cov(price, length_resid) / var(length_resid))
 
 pauto <- bind_rows(list(BV = auto, MV = auto), .id = "type") %>% 
   mutate(length = case_when(
