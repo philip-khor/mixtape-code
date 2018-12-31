@@ -1,0 +1,117 @@
+---
+title: "Instrumental Variables"
+date: "null"
+editor_options:
+  chunk_output_type: console
+output:
+  github_document:
+    toc: yes
+    toc_depth: 2
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '2'
+always_allow_html: yes
+---
+
+```{r setup, echo = F, message = F}
+knitr::opts_chunk$set(
+  cache = T,
+  cache.path = '../cache/',
+  fig.path = '../fig/',
+  message = F,
+  warning = F
+  )
+
+library(hrbrthemes)
+library(mixtape)
+library(stargazer)
+library(estimatr)
+library(broom)
+library(dplyr)
+library(car)
+library(sandwich)
+library(lmtest)
+```
+
+# College in the county
+
+```{r}
+model1 <- lm(lwage ~ educ + exper + black + south + married + smsa, data = card) 
+  
+model1 %>% 
+  tidy() %>% 
+  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+
+ivreg <- iv_robust(lwage ~ educ + exper + black + south + married +
+            smsa  | nearc4 + exper + black + south + married + smsa,
+          data = card, se_type = "classical") 
+
+# terms(ivreg) %>% 
+#   tidy() %>% 
+#   mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+
+model2 <- lm(educ ~ nearc4 + exper + black + south + married + smsa,
+             data = card)
+
+tidy(model2)
+coeftest(model2, vcov = vcovHC, type = "HC3")
+
+linearHypothesis(model2, "nearc4 = 0")
+```
+
+# Fulton fish markets
+
+## OLS
+
+```{r}
+
+lm(log(quantity) ~ log(price) + mon + tues + wed + thurs + time, data = fish) %>% 
+  tidy()
+
+fish
+```
+
+## 2SLS with average wave height instrument 
+
+```{r}
+fs_waveheight <- lm_robust(log(price) ~ wave2 + mon + tues + wed + thurs + time, 
+                           data = fish, 
+                           se_type = "HC3")
+
+tidy(fs_waveheight) %>% mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+
+linearHypothesis(fs_waveheight, "wave2 = 0")
+```
+
+```{r}
+iv_robust(log(quantity) ~ log(price) + mon + tues + wed + thurs + time | 
+            wave2 + mon + tues + wed + thurs + time, 
+          data = fish, 
+          se_type = "HC3") %>% 
+  tidy() %>% 
+  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+```
+
+## 2SLS with wind speed instrument 
+
+```{r}
+fs_waveheight <- lm_robust(log(price) ~ speed3 + mon + tues + wed + thurs + time, 
+                           data = fish, 
+                           se_type = "HC3")
+
+tidy(fs_waveheight) %>% mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+
+linearHypothesis(fs_waveheight, "speed3 = 0")
+```
+
+
+```{r}
+# with windspeed instrument 
+iv_robust(log(quantity) ~ log(price) + mon + tues + wed + thurs + time | 
+            speed3 + mon + tues + wed + thurs + time , 
+          data = fish, 
+          se_type = "stata") %>% 
+  tidy() %>% 
+  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+```
