@@ -21,11 +21,13 @@ knitr::opts_chunk$set(
   message = F,
   warning = F
   )
-load_tidy()
+
 library(hrbrthemes)
 library(mixtape)
 library(stargazer)
 library(tidyverse)
+library(magrittr)
+library(skimr)
 ```
 
 ## OLS regression line
@@ -177,7 +179,7 @@ s_factor <- coefs %>%
   pull(estimate) * mean(auto$length)
 ```
 
-```{r}
+```{r reganatomy}
 coefs_filt <- coefs %>% 
   filter(reg %in% c("bivariate", "aux2")) %>% 
   mutate(estimate = case_when(

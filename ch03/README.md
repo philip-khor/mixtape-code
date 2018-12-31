@@ -762,7 +762,7 @@ beta <- replicate(1E3, ols()) ; skim(beta)
     ## 
     ## Skim summary statistics
     ## 
-    ## ── Variable type:numeric ────────────────────────────────────────────────────────────
+    ## ── Variable type:numeric ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
     ##  variable missing complete    n mean    sd   p0  p25 p50  p75 p100
     ##      beta       0     1000 1000    2 0.041 1.87 1.97   2 2.03 2.13
     ##      hist
@@ -781,59 +781,88 @@ ggplot(tibble(x = beta)) +
 ## Regression anatomy
 
 ``` r
+library(haven)
+library(broom)
+
 # auto dataset
-dat <- read_dta('http://www.stata-press.com/data/r8/auto.dta')
+auto <- read_dta('http://www.stata-press.com/data/r8/auto.dta') %>% 
+  zap_formats() %>% 
+  zap_labels() 
 
-# bivariate regression
-reg_b <- lm(price ~ length, data = dat)
+# add a column with residuals from the 1st aux. regresssion
+resid_col <- . %>% 
+  lm(length ~ weight + headroom + mpg, data = .) %>% 
+  augment() %>% 
+  pull(.resid)
 
-# multivariate regression
-reg_m <- lm(price ~ length + weight + headroom + mpg, data = dat)
+auto %<>% mutate(length_resid = resid_col(.))
 
-# auxiliary regression 1 
-reg_a1 <- lm(length ~ weight + headroom + mpg, data = dat)
-dat %<>% mutate(length_resid = reg_a1$residuals)
+coefs <- list(bivariate = price ~ length,
+              multivariate = price ~ length + weight + headroom + mpg,
+              aux1 = length ~ weight + headroom + mpg,
+              aux2 = price ~ length_resid) %>% 
+  map(.f = ~ lm(.x, data = auto) %>% tidy()) %>% 
+  tibble(tidied = .) %>% 
+  unnest(.id = "reg") 
 
-# auxiliary regression 2
-reg_a2 <- lm(price ~ length_resid, data = dat)
-
-# check the values
-cat(
-  coef(reg_m)[['length']],
-  coef(reg_a2)[['length_resid']],
-  cov(dat$price, dat$length_resid) / var(dat$length_resid)
-  )
+coefs %>% 
+  filter(term %in% c("length", "length_resid"))
 ```
 
-    ## -94.49651 -94.49651 -94.49651
+    ## # A tibble: 3 x 6
+    ##   reg          term         estimate std.error statistic  p.value
+    ##   <chr>        <chr>           <dbl>     <dbl>     <dbl>    <dbl>
+    ## 1 bivariate    length           57.2      14.1      4.06 0.000122
+    ## 2 multivariate length          -94.5      40.4     -2.34 0.0222  
+    ## 3 aux2         length_resid    -94.5      48.6     -1.94 0.0560
 
 ``` r
-# construct plot data
-pdat <- tibble(
-  price = rep(dat$price, 2),
-  length = c(dat$length - mean(dat$length), dat$length_resid),
-  type = unlist(map(c('BV', 'MV'), rep, times = nrow(dat)))
-  )
-
-# shift factor (mean adjustment of length requires adjustment of intercept)
-s_factor <- coef(reg_b)['length'] * mean(dat$length)
-
-# figure 6
-ggplot(pdat) +
-  geom_point(aes(length, price, colour = type)) +
-  scale_colour_ipsum(name = 'Type') +
-  geom_abline(
-    intercept = coef(reg_b)['(Intercept)'] + s_factor,
-    slope = coef(reg_b)['length'],
-    col = ipsum_pal()(2)[1]
-  ) +
-  geom_abline(
-    intercept = coef(reg_a2)['(Intercept)'],
-    slope = coef(reg_a2)['length_resid'],
-    col = ipsum_pal()(2)[2]
-  ) +
-  labs(title = 'Regression Anatomy', x = 'Length', y = 'Price') +
-  theme_ipsum()
+# OLS estimator 
+auto %>% 
+  summarise(beta = cov(price, length_resid)/var(length_resid))
 ```
 
-![](../fig/ols_anatomy-1.png)<!-- -->
+    ## # A tibble: 1 x 1
+    ##    beta
+    ##   <dbl>
+    ## 1 -94.5
+
+``` r
+pauto <- bind_rows(list(BV = auto, MV = auto), .id = "type") %>% 
+  mutate(length = case_when(
+    type == "BV" ~ length - mean(length), 
+    TRUE ~ length_resid)) %>% 
+  select(price, length, type)
+
+# shift factor (mean adjustment of length requires adjustment of intercept)
+s_factor <- coefs %>% 
+  filter(reg == "bivariate", term == "length") %>% 
+  pull(estimate) * mean(auto$length)
+```
+
+``` r
+coefs_filt <- coefs %>% 
+  filter(reg %in% c("bivariate", "aux2")) %>% 
+  mutate(estimate = case_when(
+    term == "(Intercept)" & reg == "bivariate" ~ estimate + s_factor,
+    TRUE ~ estimate
+  ), 
+  term = case_when(
+    term == "length_resid" ~ "length", 
+    TRUE ~ term
+  )) %>% 
+  select(reg:estimate) %>% 
+  spread(term, estimate) 
+
+ggplot(pauto) + 
+  geom_point(aes(length, price, colour = type)) + 
+  scale_colour_ipsum(name = 'Type')  + 
+  geom_abline(data = coefs_filt, 
+              aes(intercept = `(Intercept)`, 
+                  slope = length, 
+                  col = reg)) + 
+  labs(title = 'Regression Anatomy', x = 'Length', y = 'Price') +
+  theme_ipsum() 
+```
+
+![](../fig/reganatomy-1.png)<!-- -->
