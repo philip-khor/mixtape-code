@@ -32,12 +32,47 @@ library(dplyr)
 library(car)
 library(sandwich)
 library(lmtest)
+
 ```
+
+This exercise uses
+
+- `dplyr` for data wrangling 
+- `broom::tidy()` for extracting coefficient estimates and standard errors
+- `estimatr::lm_robust()` for linear regression with robust standard errors 
+- `estimatr::iv_robust()` for 2SLS with robust standard errors 
+- `car::linearHypothesis()` to run conditional F test for weak instruments 
+
 
 # College in the county
 
+## First-stage 
+
+Regress the endogenous covariate on all exogenous variables
+
 ```{r}
-model1 <- lm(lwage ~ educ + exper + black + south + married + smsa, data = card) 
+model2 <- lm_robust(educ ~ nearc4 + exper + black + south + married + smsa,
+                    data = card)
+
+tidy(model2) %>% 
+  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+
+linearHypothesis(model2, "nearc4 = 0")
+```
+
+## Estimate OLS and 2SLS effects 
+
+The formula syntax for `estimatr::iv_robust()``` is: 
+
+```r
+iv_robust(Y ~ D + X | Z + X, data = dat)
+```
+
+where $D$ is the endogenous variable of interest, $X$ are controls and $Z$ is the instrument. 
+
+```{r}
+model1 <- lm_robust(lwage ~ educ + exper + black + south + married + smsa, 
+                    data = card) 
   
 model1 %>% 
   tidy() %>% 
@@ -46,18 +81,6 @@ model1 %>%
 ivreg <- iv_robust(lwage ~ educ + exper + black + south + married +
             smsa  | nearc4 + exper + black + south + married + smsa,
           data = card, se_type = "classical") 
-
-# terms(ivreg) %>% 
-#   tidy() %>% 
-#   mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
-
-model2 <- lm(educ ~ nearc4 + exper + black + south + married + smsa,
-             data = card)
-
-tidy(model2)
-coeftest(model2, vcov = vcovHC, type = "HC3")
-
-linearHypothesis(model2, "nearc4 = 0")
 ```
 
 # Fulton fish markets
@@ -66,20 +89,20 @@ linearHypothesis(model2, "nearc4 = 0")
 
 ```{r}
 
-lm(log(quantity) ~ log(price) + mon + tues + wed + thurs + time, data = fish) %>% 
+lm_robust(log(quantity) ~ log(price) + mon + tues + wed + thurs + time, 
+          data = fish) %>% 
   tidy()
-
-fish
 ```
 
 ## 2SLS with average wave height instrument 
 
 ```{r}
 fs_waveheight <- lm_robust(log(price) ~ wave2 + mon + tues + wed + thurs + time, 
-                           data = fish, 
-                           se_type = "HC3")
+                           data = fish)
 
-tidy(fs_waveheight) %>% mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+fs_waveheight %>% 
+  tidy() %>% 
+  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
 
 linearHypothesis(fs_waveheight, "wave2 = 0")
 ```
@@ -87,31 +110,32 @@ linearHypothesis(fs_waveheight, "wave2 = 0")
 ```{r}
 iv_robust(log(quantity) ~ log(price) + mon + tues + wed + thurs + time | 
             wave2 + mon + tues + wed + thurs + time, 
-          data = fish, 
-          se_type = "HC3") %>% 
+          data = fish) %>% 
   tidy() %>% 
   mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
 ```
 
 ## 2SLS with wind speed instrument 
 
+### First-stage
 ```{r}
 fs_waveheight <- lm_robust(log(price) ~ speed3 + mon + tues + wed + thurs + time, 
-                           data = fish, 
-                           se_type = "HC3")
+                           data = fish)
 
-tidy(fs_waveheight) %>% mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+fs_waveheight %>% 
+  tidy() %>% 
+  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
 
 linearHypothesis(fs_waveheight, "speed3 = 0")
 ```
 
+### 2SLS
 
 ```{r}
-# with windspeed instrument 
 iv_robust(log(quantity) ~ log(price) + mon + tues + wed + thurs + time | 
             speed3 + mon + tues + wed + thurs + time , 
-          data = fish, 
-          se_type = "stata") %>% 
+          data = fish) %>% 
   tidy() %>% 
   mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
 ```
+
