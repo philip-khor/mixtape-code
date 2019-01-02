@@ -15,12 +15,20 @@ dat <- tibble(
   y = 5.5 * x + 12 * u
   )
 
-# run the regression
+# regress y on x 
 reg <- lm(y ~ x, data = dat)
 
+# create named vector of coefficient estimates
 coefs <- tidy(reg) %>% pull(estimate) 
 names(coefs) <- tidy(reg) %>% pull(term)
 
+round(coefs, 3)
+```
+
+    ## (Intercept)           x 
+    ##      -0.050       5.557
+
+``` r
 # fitted values and residuals (two ways to recover them)
 preds_resids <- reg %>% 
   augment() %>% 
@@ -48,7 +56,7 @@ ggplot(preds_resids, aes(x, y)) +
   theme_ipsum()
 ```
 
-![](../fig/ols1-1.png)<!-- -->
+![](../fig/ols1a-1.png)<!-- -->
 
 ``` r
 # figure 4
@@ -58,9 +66,11 @@ ggplot(preds_resids, aes(yhat1, uhat1)) +
   theme_ipsum()
 ```
 
-![](../fig/ols1-2.png)<!-- -->
+![](../fig/ols1b-1.png)<!-- -->
 
 ## Algebraic properties of OLS
+
+### Show that the sum of the OLS residual always adds up to zero
 
 ``` r
 set.seed(1234)
@@ -655,7 +665,22 @@ Total
 
 </table>
 
-## Expected value of OLS
+``` r
+means <- dat %>% summarise_all(mean)
+
+tidy(reg) %>% 
+  select(term, estimate) %>% 
+  spread(term, estimate) %>% 
+  mutate(av_pred = `(Intercept)` + means$x * x, 
+         mean_y = means$y)
+```
+
+    ## # A tibble: 1 x 4
+    ##   `(Intercept)`     x av_pred mean_y
+    ##           <dbl> <dbl>   <dbl>  <dbl>
+    ## 1         -3.85  1.25   -8.15  -8.15
+
+## Unbiasness: Monte Carlo simulation of OLS
 
 ``` r
 # ols function
@@ -667,7 +692,6 @@ ols <- function(...) {
     ) %>% 
     lm(y ~ x, data = .)
 }
-
 
 betas_df <- map_df(1:1E3, ~ tidy(ols(.)), .id = "id") %>% 
   unnest() %>% 
@@ -849,31 +873,36 @@ beta
 
 ``` r
 # figure 5
-ggplot(betas_df, aes(x = beta)) +
+ggplot(betas_df, aes(x = beta, y = ..density..)) +
   geom_histogram() +
   geom_vline(xintercept = 2, col = "red") + 
-  labs(x = 'Beta', y = 'Count') +
+  labs(title = "Distribution of coefficients from Monte Carlo simulation", 
+       x = TeX("$\\beta_{x}$", ), y = 'Density') +
   theme_ipsum()
 ```
 
 ![](../fig/ols_value-1.png)<!-- -->
 
-## Regression anatomy
+## Regression anatomy theorem
 
 ``` r
 # auto dataset
 auto <- read_dta('http://www.stata-press.com/data/r8/auto.dta') %>% 
+  # cleaning up some of the Stata metadata
   zap_formats() %>% 
   zap_labels() 
 
-# add a column with residuals from the 1st aux. regresssion
+# write a function which adds a column with residuals from the 1st aux. regresssion
+# fitted on the data
 resid_col <- . %>% 
   lm(length ~ weight + headroom + mpg, data = .) %>% 
   augment() %>% 
   pull(.resid)
 
+# add the residuals to the data frame 
 auto %<>% mutate(length_resid = resid_col(.))
 
+# create a data frame of estimates from each regression in the list
 coefs <- list(bivariate = price ~ length,
               multivariate = price ~ length + weight + headroom + mpg,
               aux1 = length ~ weight + headroom + mpg,
@@ -882,19 +911,24 @@ coefs <- list(bivariate = price ~ length,
   tibble(tidied = .) %>% 
   unnest(.id = "reg") 
 
+# select the coefficients from the original regression and 
+# the partialled-out version
 coefs %>% 
-  filter(term %in% c("length", "length_resid"))
+  filter(term %in% c("length", "length_resid")) %>% 
+  select(reg:estimate)
 ```
 
-    ## # A tibble: 3 x 6
-    ##   reg          term         estimate std.error statistic  p.value
-    ##   <chr>        <chr>           <dbl>     <dbl>     <dbl>    <dbl>
-    ## 1 bivariate    length           57.2      14.1      4.06 0.000122
-    ## 2 multivariate length          -94.5      40.4     -2.34 0.0222  
-    ## 3 aux2         length_resid    -94.5      48.6     -1.94 0.0560
+    ## # A tibble: 3 x 3
+    ##   reg          term         estimate
+    ##   <chr>        <chr>           <dbl>
+    ## 1 bivariate    length           57.2
+    ## 2 multivariate length          -94.5
+    ## 3 aux2         length_resid    -94.5
+
+OLS slope estimate: \[\hat \beta_1 = \frac{C(x,y)}{Var(x)} \]
 
 ``` r
-# OLS estimator 
+# OLS estimate 
 auto %>% 
   summarise(beta = cov(price, length_resid) / var(length_resid))
 ```
@@ -938,7 +972,8 @@ ggplot(pauto) +
               aes(intercept = `(Intercept)`, 
                   slope = length, 
                   col = reg)) + 
-  labs(title = 'Regression Anatomy', x = 'Length', y = 'Price') +
+  labs(title = 'Regression Anatomy', 
+       x = 'Length', y = 'Price') +
   theme_ipsum() 
 ```
 
