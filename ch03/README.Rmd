@@ -188,15 +188,14 @@ coefs <- list(bivariate = price ~ length,
               multivariate = price ~ length + weight + headroom + mpg,
               aux1 = length ~ weight + headroom + mpg,
               aux2 = price ~ length_resid) %>% 
-  map(.f = ~ lm(.x, data = auto) %>% tidy()) %>% 
-  tibble(tidied = .) %>% 
-  unnest(.id = "reg") 
+  map_df(.f = ~ tidy(lm(.x, data = auto)), .id = "reg") 
 
 # select the coefficients from the original regression and 
 # the partialled-out version
 coefs %>% 
   filter(term %in% c("length", "length_resid")) %>% 
-  select(reg:estimate)
+  select(reg:estimate) %>% 
+  knitr::kable() 
 ```
 
 OLS slope estimate: 

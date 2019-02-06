@@ -907,23 +907,115 @@ coefs <- list(bivariate = price ~ length,
               multivariate = price ~ length + weight + headroom + mpg,
               aux1 = length ~ weight + headroom + mpg,
               aux2 = price ~ length_resid) %>% 
-  map(.f = ~ lm(.x, data = auto) %>% tidy()) %>% 
-  tibble(tidied = .) %>% 
-  unnest(.id = "reg") 
+  map_df(.f = ~ tidy(lm(.x, data = auto)), .id = "reg") 
 
 # select the coefficients from the original regression and 
 # the partialled-out version
 coefs %>% 
   filter(term %in% c("length", "length_resid")) %>% 
-  select(reg:estimate)
+  select(reg:estimate) %>% 
+  knitr::kable() 
 ```
 
-    ## # A tibble: 3 x 3
-    ##   reg          term         estimate
-    ##   <chr>        <chr>           <dbl>
-    ## 1 bivariate    length           57.2
-    ## 2 multivariate length          -94.5
-    ## 3 aux2         length_resid    -94.5
+<table>
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+reg
+
+</th>
+
+<th style="text-align:left;">
+
+term
+
+</th>
+
+<th style="text-align:right;">
+
+estimate
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td style="text-align:left;">
+
+bivariate
+
+</td>
+
+<td style="text-align:left;">
+
+length
+
+</td>
+
+<td style="text-align:right;">
+
+57.20224
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+multivariate
+
+</td>
+
+<td style="text-align:left;">
+
+length
+
+</td>
+
+<td style="text-align:right;">
+
+\-94.49651
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+aux2
+
+</td>
+
+<td style="text-align:left;">
+
+length\_resid
+
+</td>
+
+<td style="text-align:right;">
+
+\-94.49651
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
 
 OLS slope estimate: \[\hat \beta_1 = \frac{C(x,y)}{Var(x)} \]
 
