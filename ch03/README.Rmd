@@ -173,22 +173,18 @@ auto <- read_dta('http://www.stata-press.com/data/r8/auto.dta') %>%
   zap_formats() %>% 
   zap_labels() 
 
-# write a function which adds a column with residuals from the 1st aux. regresssion
-# fitted on the data
-resid_col <- . %>% 
-  lm(length ~ weight + headroom + mpg, data = .) %>% 
-  augment() %>% 
-  pull(.resid)
-
 # add the residuals to the data frame 
-auto %<>% mutate(length_resid = resid_col(.))
+auto %<>% 
+  mutate(length_resid = residuals(lm(length ~ weight + headroom + mpg, 
+                                     data = .)))
 
 # create a data frame of estimates from each regression in the list
 coefs <- list(bivariate = price ~ length,
               multivariate = price ~ length + weight + headroom + mpg,
               aux1 = length ~ weight + headroom + mpg,
               aux2 = price ~ length_resid) %>% 
-  map_df(.f = ~ tidy(lm(.x, data = auto)), .id = "reg") 
+  map_df(.f = ~ tidy(lm(.x, data = auto)), 
+         .id = "reg") 
 
 # select the coefficients from the original regression and 
 # the partialled-out version
@@ -223,12 +219,10 @@ coefs_filt <- coefs %>%
   filter(reg %in% c("bivariate", "aux2")) %>% 
   mutate(estimate = case_when(
     term == "(Intercept)" & reg == "bivariate" ~ estimate + s_factor,
-    TRUE ~ estimate
-  ), 
-  term = case_when(
-    term == "length_resid" ~ "length", 
-    TRUE ~ term
-  )) %>% 
+    TRUE ~ estimate),
+         term = case_when(
+           term == "length_resid" ~ "length",
+           TRUE ~ term)) %>% 
   select(reg:estimate) %>% 
   spread(term, estimate) 
 
