@@ -123,8 +123,11 @@ reg %>%
   fmt_number(columns = vars(x, uhat, y, yhat, 
                             x_uhat, yhat_uhat), 
              decimals = 3) %>% 
-  summary_rows(fns = list(~ sum(., na.rm = TRUE))) 
+  summary_rows(fns = list(~ sum(., na.rm = TRUE))) %>% 
+  gtsave("zero_resid.png") -> gt_table
 ```
+
+![](zero_resid.png)
 
 ```{r}
 means <- dat %>% summarise_all(mean)
