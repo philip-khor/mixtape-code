@@ -6,6 +6,12 @@
 This repo provides replication code for the book [“Casual Inference: The
 Mixtape”](http://scunning.com/stata.html) by Scott Cunningham.
 
+This fork is an experiment in using tidyverse code for econometrics, specifically 
+constructing pipe-oriented workflow. In some places it gets rather awkward, so 
+this shouldn't be used as a reference to the text; more of a code repository 
+with ideas for integrating tidyverse packages such as dplyr, broom and estimatr
+into an econometrics workflow.
+
 ## Chapters
 
   - [Properties of
