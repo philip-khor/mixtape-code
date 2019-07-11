@@ -51,16 +51,18 @@ dat <- tibble(
 # regress y on x 
 reg <- lm(y ~ x, data = dat)
 
-# create named vector of coefficient estimates
+# create single-row data-frame of coefficient estimates
 reg %>% 
-  tidy() %>% 
+  tidy() %>% # obtain coefs in tidy tibble
   select(term, estimate) %>% 
   spread(term, estimate) -> coefs
+coefs 
 
 # fitted values and residuals (two ways to recover them)
 reg %>% 
-  augment() %>% 
+  augment() %>% # add fitted values, resid to original data 
   mutate(yhat1 = .fitted,
+         # take advantage of simplifying property of [[ here
          yhat2 = coefs[["(Intercept)"]] + coefs[["x"]] * dat[["x"]],
          uhat1 = .resid,
          uhat2 = y - yhat2) -> preds_resids
