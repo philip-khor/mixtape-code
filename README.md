@@ -9,21 +9,21 @@ Mixtape”](http://scunning.com/stata.html) by Scott Cunningham.
 ## Chapters
 
   - [Properties of
-    regression](https://github.com/johnson-shuffle/mixtape-code/tree/master/ch03)
+    regression](ch03)
 
   - [Directed acyclical
-    graphs](https://github.com/johnson-shuffle/mixtape-code/tree/master/ch04)
+    graphs](ch04)
 
   - [Potential outcomes causal
-    model](https://github.com/johnson-shuffle/mixtape-code/tree/master/ch05)
+    model](ch05)
 
   - [Matching and
-    subclassification](https://github.com/johnson-shuffle/mixtape-code/tree/master/ch06)
+    subclassification](ch06)
 
   - [Regression
-    discontinuity](https://github.com/johnson-shuffle/mixtape-code/tree/master/ch07)
+    discontinuity](ch07)
 
-  - Instrumental variables
+  - [Instrumental variables](ch08)
 
   - Panel data
 
