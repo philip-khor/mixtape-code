@@ -33,6 +33,7 @@ library(haven)
 library(broom)
 library(kableExtra)
 library(broom)
+library(gt)
 ```
 
 ## OLS regression line
@@ -117,12 +118,12 @@ reg %>%
          x_uhat = x * uhat, 
          yhat_uhat = yhat * uhat) %>% 
   select(id, x, uhat, y, yhat, uhat, x_uhat, yhat_uhat) %>% 
-  adorn_totals() %>% 
-  adorn_rounding(digits = 3) %>% 
-  # styling table
-  knitr::kable() %>% 
-  kable_styling() %>% 
-  row_spec(11, bold = TRUE)
+  gt(rowname_col = "id") %>% 
+  tab_header(title = "OLS residuals always sum to zero") %>% 
+  fmt_number(columns = vars(x, uhat, y, yhat, 
+                            x_uhat, yhat_uhat), 
+             decimals = 3) %>% 
+  summary_rows(fns = list(~ sum(., na.rm = TRUE))) 
 ```
 
 ```{r}
