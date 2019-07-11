@@ -19,23 +19,18 @@ dat <- tibble(
 reg <- lm(y ~ x, data = dat)
 
 # create named vector of coefficient estimates
-coefs <- tidy(reg) %>% pull(estimate) 
-names(coefs) <- tidy(reg) %>% pull(term)
+reg %>% 
+  tidy() %>% 
+  select(term, estimate) %>% 
+  spread(term, estimate) -> coefs
 
-round(coefs, 3)
-```
-
-    ## (Intercept)           x 
-    ##      -0.050       5.557
-
-``` r
 # fitted values and residuals (two ways to recover them)
-preds_resids <- reg %>% 
+reg %>% 
   augment() %>% 
   mutate(yhat1 = .fitted,
-         yhat2 = coefs["(Intercept)"] + coefs["x"] * dat$x,
+         yhat2 = coefs[["(Intercept)"]] + coefs[["x"]] * dat[["x"]],
          uhat1 = .resid,
-         uhat2 = y - yhat2)
+         uhat2 = y - yhat2) -> preds_resids
 
 # check equality
 preds_resids %>% 
