@@ -81,9 +81,9 @@ and \(Z\) is the instrument.
 <td>
 
 ``` r
-model1 <- lm_robust(lwage ~ educ + exper + 
-                      black + south + married + smsa, 
-                    data = card) 
+lm_robust(lwage ~ educ + exper +
+            black + south + married + smsa,
+          data = card) -> model1
   
 tidy_round(model1)
 ```
@@ -329,12 +329,13 @@ smsa
 <td>
 
 ``` r
-ivreg <- iv_robust(lwage ~ educ + exper + 
-                     black + south + married +
-                     smsa  | nearc4 + exper + 
-                     black + south + married + smsa,
-          data = card, se_type = "classical") 
-tidy_round(ivreg)
+iv_robust(lwage ~ educ + exper +
+            black + south + married +
+            smsa  | nearc4 + exper +
+            black + south + married + smsa,
+          data = card, 
+          se_type = "classical") %>%  
+  tidy_round()
 ```
 
 <table class="table" style="margin-left: auto; margin-right: auto;">
@@ -1356,9 +1357,9 @@ time
 ### First-stage
 
 ``` r
-fs_waveheight <- lm_robust(log(price) ~ speed3 + mon + 
-                             tues + wed + thurs + time, 
-                           data = fish)
+lm_robust(log(price) ~ speed3 + mon +
+            tues + wed + thurs + time,
+          data = fish) -> fs_waveheight
 
 tidy_round(fs_waveheight)
 ```
