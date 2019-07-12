@@ -32,7 +32,8 @@ model2 <- lm_robust(educ ~ nearc4 + exper +
                       black + south + married + smsa,
                     data = card)
 
-tidy_round(model2)
+tidy_round(model2, 
+           caption = "College in the country, first-stage")
 ```
 
 | term        | estimate | std.error | p.value |
@@ -44,6 +45,8 @@ tidy_round(model2)
 | south       |  \-0.297 |     0.079 |       0 |
 | married     |  \-0.073 |     0.018 |       0 |
 | smsa        |    0.421 |     0.085 |       0 |
+
+College in the country, first-stage
 
 ``` r
 linearHypothesis(model2, "nearc4 = 0")
@@ -85,10 +88,17 @@ lm_robust(lwage ~ educ + exper +
             black + south + married + smsa,
           data = card) -> model1
   
-tidy_round(model1)
+tidy_round(model1, 
+           caption = "OLS estimate")
 ```
 
 <table class="table" style="margin-left: auto; margin-right: auto;">
+
+<caption>
+
+OLS estimate
+
+</caption>
 
 <thead>
 
@@ -335,10 +345,16 @@ iv_robust(lwage ~ educ + exper +
             black + south + married + smsa,
           data = card, 
           se_type = "classical") %>%  
-  tidy_round()
+  tidy_round(caption = "IV estimate")
 ```
 
 <table class="table" style="margin-left: auto; margin-right: auto;">
+
+<caption>
+
+IV estimate
+
+</caption>
 
 <thead>
 
@@ -592,10 +608,16 @@ smsa
 lm_robust(log(quantity) ~ log(price) + 
             mon + tues + wed + thurs + time, 
           data = fish) %>% 
-  tidy_round()
+  tidy_round(caption = "OLS with controls")
 ```
 
 <table class="table" style="margin-left: auto; margin-right: auto;">
+
+<caption>
+
+OLS with controls
+
+</caption>
 
 <thead>
 
@@ -840,10 +862,16 @@ fs_waveheight <- lm_robust(log(price) ~ wave2 +
                              mon + tues + wed + thurs + time, 
                            data = fish)
 
-tidy_round(fs_waveheight)
+tidy_round(fs_waveheight, "First stage")
 ```
 
 <table class="table" style="margin-left: auto; margin-right: auto;">
+
+<caption>
+
+First stage
+
+</caption>
 
 <thead>
 
@@ -1106,11 +1134,18 @@ linearHypothesis(fs_waveheight, "wave2 = 0")
 ``` r
 iv_robust(log(quantity) ~ log(price) + mon + tues + wed + thurs + time | 
             wave2 + mon + tues + wed + thurs + time, 
-          data = fish, se_type = "classical") %>% 
-  tidy_round()
+          data = fish, 
+          se_type = "classical") %>% 
+  tidy_round(caption = "IV estimate")
 ```
 
 <table class="table" style="margin-left: auto; margin-right: auto;">
+
+<caption>
+
+IV estimate
+
+</caption>
 
 <thead>
 
@@ -1361,10 +1396,17 @@ lm_robust(log(price) ~ speed3 + mon +
             tues + wed + thurs + time,
           data = fish) -> fs_waveheight
 
-tidy_round(fs_waveheight)
+tidy_round(fs_waveheight, 
+           caption = "First-stage")
 ```
 
 <table class="table" style="margin-left: auto; margin-right: auto;">
+
+<caption>
+
+First-stage
+
+</caption>
 
 <thead>
 
@@ -1611,10 +1653,16 @@ iv_robust(log(quantity) ~ log(price) + mon + tues +
             wed + thurs + time | 
             speed3 + mon + tues + wed + thurs + time , 
           data = fish, se_type = "classical") %>% 
-  tidy_round()
+  tidy_round(caption = "IV")
 ```
 
 <table class="table" style="margin-left: auto; margin-right: auto;">
+
+<caption>
+
+IV
+
+</caption>
 
 <thead>
 
