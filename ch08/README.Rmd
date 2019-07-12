@@ -5,8 +5,7 @@ editor_options:
   chunk_output_type: console
 output:
   github_document:
-    toc: yes
-    toc_depth: 2
+    
   html_document:
     df_print: paged
     toc: yes
@@ -16,12 +15,10 @@ always_allow_html: yes
 
 ```{r setup, echo = F, message = F}
 knitr::opts_chunk$set(
-  cache = T,
-  cache.path = '../cache/',
-  fig.path = '../fig/',
-  message = F,
-  warning = F
-  )
+	fig.path = "../fig/",
+	message = FALSE,
+	warning = FALSE
+)
 
 library(hrbrthemes)
 library(mixtape)
@@ -32,6 +29,13 @@ library(dplyr)
 library(car)
 library(sandwich)
 library(lmtest)
+
+# short function to round and keep only important parts of the output
+tidy_round <- . %>% 
+  tidy() %>% 
+  select(term, estimate, std.error, p.value) %>%
+  knitr::kable(digits = 3) %>% 
+  kableExtra::kable_styling()
 
 ```
 
@@ -51,18 +55,18 @@ This exercise uses
 Regress the endogenous covariate on all exogenous variables
 
 ```{r}
-model2 <- lm_robust(educ ~ nearc4 + exper + black + south + married + smsa,
+model2 <- lm_robust(educ ~ nearc4 + exper + 
+                      black + south + married + smsa,
                     data = card)
 
-tidy(model2) %>% 
-  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+tidy_round(model2)
 
 linearHypothesis(model2, "nearc4 = 0")
 ```
 
 ## Estimate OLS and 2SLS effects 
 
-The formula syntax for `estimatr::iv_robust()``` is
+The formula syntax for `estimatr::iv_robust()` is
 
 ```r
 iv_robust(Y ~ D + X | Z + X, data = dat)
@@ -70,72 +74,105 @@ iv_robust(Y ~ D + X | Z + X, data = dat)
 
 where $D$ is the endogenous variable of interest, $X$ are controls and $Z$ is the instrument. 
 
+<table>
+<tr>
+<td>
 ```{r}
-model1 <- lm_robust(lwage ~ educ + exper + black + south + married + smsa, 
+model1 <- lm_robust(lwage ~ educ + exper + 
+                      black + south + married + smsa, 
                     data = card) 
   
-model1 %>% 
-  tidy() %>% 
-  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
-
-ivreg <- iv_robust(lwage ~ educ + exper + black + south + married +
-            smsa  | nearc4 + exper + black + south + married + smsa,
-          data = card, se_type = "classical") 
+tidy_round(model1)
 ```
+</td>
+<td>
+```{r}
+ivreg <- iv_robust(lwage ~ educ + exper + 
+                     black + south + married +
+                     smsa  | nearc4 + exper + 
+                     black + south + married + smsa,
+          data = card, se_type = "classical") 
+tidy_round(ivreg)
+```
+</td>
+</tr>
+</table>
 
 # Fulton fish markets
 
-## OLS
+</table>
+<tr>
+<td>
+
 
 ```{r}
 
-lm_robust(log(quantity) ~ log(price) + mon + tues + wed + thurs + time, 
+lm_robust(log(quantity) ~ log(price) + 
+            mon + tues + wed + thurs + time, 
           data = fish) %>% 
-  tidy()
+  tidy_round()
 ```
 
-## 2SLS with average wave height instrument 
+</td>
+<td>
+
 
 ```{r}
-fs_waveheight <- lm_robust(log(price) ~ wave2 + mon + tues + wed + thurs + time, 
+fs_waveheight <- lm_robust(log(price) ~ wave2 + 
+                             mon + tues + wed + thurs + time, 
                            data = fish)
 
-fs_waveheight %>% 
-  tidy() %>% 
-  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+tidy_round(fs_waveheight)
+```
 
+</td>
+</tr>
+</table>
+
+```{r}
 linearHypothesis(fs_waveheight, "wave2 = 0")
 ```
 
 ```{r}
 iv_robust(log(quantity) ~ log(price) + mon + tues + wed + thurs + time | 
             wave2 + mon + tues + wed + thurs + time, 
-          data = fish) %>% 
-  tidy() %>% 
-  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+          data = fish, se_type = "classical") %>% 
+  tidy_round()
 ```
 
 ## 2SLS with wind speed instrument 
 
+<table>
+<tr>
+<td>
+
 ### First-stage
 ```{r}
-fs_waveheight <- lm_robust(log(price) ~ speed3 + mon + tues + wed + thurs + time, 
+fs_waveheight <- lm_robust(log(price) ~ speed3 + mon + 
+                             tues + wed + thurs + time, 
                            data = fish)
 
-fs_waveheight %>% 
-  tidy() %>% 
-  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+tidy_round(fs_waveheight)
 
-linearHypothesis(fs_waveheight, "speed3 = 0")
 ```
+
+</td>
+<td>
 
 ### 2SLS
 
 ```{r}
-iv_robust(log(quantity) ~ log(price) + mon + tues + wed + thurs + time | 
+iv_robust(log(quantity) ~ log(price) + mon + tues + 
+            wed + thurs + time | 
             speed3 + mon + tues + wed + thurs + time , 
-          data = fish) %>% 
-  tidy() %>% 
-  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+          data = fish, se_type = "classical") %>% 
+  tidy_round()
 ```
 
+</td>
+</tr>
+</table>
+
+```{r}
+linearHypothesis(fs_waveheight, "speed3 = 0")
+```

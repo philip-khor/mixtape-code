@@ -2,6 +2,14 @@ Instrumental Variables
 ================
 null
 
+    ## Warning: package 'estimatr' was built under R version 3.6.1
+
+    ## Warning: package 'car' was built under R version 3.6.1
+
+    ## Warning: package 'sandwich' was built under R version 3.6.1
+
+    ## Warning: package 'lmtest' was built under R version 3.6.1
+
 This exercise uses
 
   - `dplyr` for data wrangling
@@ -17,33 +25,25 @@ This exercise uses
 
 ## First-stage
 
-Regress the endogenous covariate on all exogenous
-variables
+Regress the endogenous covariate on all exogenous variables
 
 ``` r
-model2 <- lm_robust(educ ~ nearc4 + exper + black + south + married + smsa,
+model2 <- lm_robust(educ ~ nearc4 + exper + 
+                      black + south + married + smsa,
                     data = card)
 
-tidy(model2) %>% 
-  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+tidy_round(model2)
 ```
 
-    ##          term estimate std.error  statistic      p.value   conf.low
-    ## 1 (Intercept)   16.831     0.125 134.291382 0.000000e+00 16.5849556
-    ## 2      nearc4    0.327     0.081   4.062970 4.969605e-05  0.1693387
-    ## 3       exper   -0.404     0.008 -49.305184 0.000000e+00 -0.4205174
-    ## 4       black   -0.948     0.089 -10.703388 2.908912e-26 -1.1211060
-    ## 5       south   -0.297     0.079  -3.775431 1.628308e-04 -0.4517818
-    ## 6     married   -0.073     0.018  -4.125456 3.800720e-05 -0.1072436
-    ## 7        smsa    0.421     0.085   4.957298 7.545703e-07  0.2544185
-    ##     conf.high   df outcome
-    ## 1 17.07643745 2996    educ
-    ## 2  0.48522649 2996    educ
-    ## 3 -0.38835058 2996    educ
-    ## 4 -0.77395019 2996    educ
-    ## 5 -0.14292374 2996    educ
-    ## 6 -0.03814362 2996    educ
-    ## 7  0.58737061 2996    educ
+| term        | estimate | std.error | p.value |
+| :---------- | -------: | --------: | ------: |
+| (Intercept) |   16.831 |     0.125 |       0 |
+| nearc4      |    0.327 |     0.081 |       0 |
+| exper       |  \-0.404 |     0.008 |       0 |
+| black       |  \-0.948 |     0.089 |       0 |
+| south       |  \-0.297 |     0.079 |       0 |
+| married     |  \-0.073 |     0.018 |       0 |
+| smsa        |    0.421 |     0.085 |       0 |
 
 ``` r
 linearHypothesis(model2, "nearc4 = 0")
@@ -65,102 +65,1024 @@ linearHypothesis(model2, "nearc4 = 0")
 
 ## Estimate OLS and 2SLS effects
 
-The formula syntax for `estimatr::iv_robust()` is:
+The formula syntax for `estimatr::iv_robust()` is
 
 ``` r
 iv_robust(Y ~ D + X | Z + X, data = dat)
 ```
 
 where \(D\) is the endogenous variable of interest, \(X\) are controls
-and \(Z\) is the
-instrument.
+and \(Z\) is the instrument.
+
+<table>
+
+<tr>
+
+<td>
 
 ``` r
-model1 <- lm_robust(lwage ~ educ + exper + black + south + married + smsa, 
+model1 <- lm_robust(lwage ~ educ + exper + 
+                      black + south + married + smsa, 
                     data = card) 
   
-model1 %>% 
-  tidy() %>% 
-  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+tidy_round(model1)
 ```
 
-    ##          term estimate std.error  statistic      p.value    conf.low
-    ## 1 (Intercept)    5.063     0.066  76.492228 0.000000e+00  4.93352651
-    ## 2        educ    0.071     0.004  19.689232 2.952497e-81  0.06408509
-    ## 3       exper    0.034     0.002  15.063133 1.754841e-49  0.02970630
-    ## 4       black   -0.166     0.017  -9.539818 2.859334e-21 -0.20015172
-    ## 5       south   -0.132     0.015  -8.653098 8.038781e-18 -0.16136086
-    ## 6     married   -0.036     0.004 -10.037802 2.420439e-23 -0.04287760
-    ## 7        smsa    0.176     0.015  11.639880 1.168602e-30  0.14617550
-    ##     conf.high   df outcome
-    ## 1  5.19310657 2996   lwage
-    ## 2  0.07826061 2996   lwage
-    ## 3  0.03859733 2996   lwage
-    ## 4 -0.13190317 2996   lwage
-    ## 5 -0.10174268 2996   lwage
-    ## 6 -0.02886383 2996   lwage
-    ## 7  0.20539874 2996   lwage
+<table class="table" style="margin-left: auto; margin-right: auto;">
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+term
+
+</th>
+
+<th style="text-align:right;">
+
+estimate
+
+</th>
+
+<th style="text-align:right;">
+
+std.error
+
+</th>
+
+<th style="text-align:right;">
+
+p.value
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td style="text-align:left;">
+
+(Intercept)
+
+</td>
+
+<td style="text-align:right;">
+
+5.063
+
+</td>
+
+<td style="text-align:right;">
+
+0.066
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+educ
+
+</td>
+
+<td style="text-align:right;">
+
+0.071
+
+</td>
+
+<td style="text-align:right;">
+
+0.004
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+exper
+
+</td>
+
+<td style="text-align:right;">
+
+0.034
+
+</td>
+
+<td style="text-align:right;">
+
+0.002
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+black
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.166
+
+</td>
+
+<td style="text-align:right;">
+
+0.017
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+south
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.132
+
+</td>
+
+<td style="text-align:right;">
+
+0.015
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+married
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.036
+
+</td>
+
+<td style="text-align:right;">
+
+0.004
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+smsa
+
+</td>
+
+<td style="text-align:right;">
+
+0.176
+
+</td>
+
+<td style="text-align:right;">
+
+0.015
+
+</td>
+
+<td style="text-align:right;">
+
+0
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</td>
+
+<td>
 
 ``` r
-ivreg <- iv_robust(lwage ~ educ + exper + black + south + married +
-            smsa  | nearc4 + exper + black + south + married + smsa,
+ivreg <- iv_robust(lwage ~ educ + exper + 
+                     black + south + married +
+                     smsa  | nearc4 + exper + 
+                     black + south + married + smsa,
           data = card, se_type = "classical") 
+tidy_round(ivreg)
 ```
+
+<table class="table" style="margin-left: auto; margin-right: auto;">
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+term
+
+</th>
+
+<th style="text-align:right;">
+
+estimate
+
+</th>
+
+<th style="text-align:right;">
+
+std.error
+
+</th>
+
+<th style="text-align:right;">
+
+p.value
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td style="text-align:left;">
+
+(Intercept)
+
+</td>
+
+<td style="text-align:right;">
+
+4.162
+
+</td>
+
+<td style="text-align:right;">
+
+0.850
+
+</td>
+
+<td style="text-align:right;">
+
+0.000
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+educ
+
+</td>
+
+<td style="text-align:right;">
+
+0.124
+
+</td>
+
+<td style="text-align:right;">
+
+0.050
+
+</td>
+
+<td style="text-align:right;">
+
+0.013
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+exper
+
+</td>
+
+<td style="text-align:right;">
+
+0.056
+
+</td>
+
+<td style="text-align:right;">
+
+0.020
+
+</td>
+
+<td style="text-align:right;">
+
+0.006
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+black
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.116
+
+</td>
+
+<td style="text-align:right;">
+
+0.051
+
+</td>
+
+<td style="text-align:right;">
+
+0.023
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+south
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.113
+
+</td>
+
+<td style="text-align:right;">
+
+0.023
+
+</td>
+
+<td style="text-align:right;">
+
+0.000
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+married
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.032
+
+</td>
+
+<td style="text-align:right;">
+
+0.005
+
+</td>
+
+<td style="text-align:right;">
+
+0.000
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+smsa
+
+</td>
+
+<td style="text-align:right;">
+
+0.148
+
+</td>
+
+<td style="text-align:right;">
+
+0.031
+
+</td>
+
+<td style="text-align:right;">
+
+0.000
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</td>
+
+</tr>
+
+</table>
 
 # Fulton fish markets
 
-## OLS
+</table>
+
+<tr>
+
+<td>
 
 ``` r
-lm_robust(log(quantity) ~ log(price) + mon + tues + wed + thurs + time, 
+lm_robust(log(quantity) ~ log(price) + 
+            mon + tues + wed + thurs + time, 
           data = fish) %>% 
-  tidy()
+  tidy_round()
 ```
 
-    ##          term     estimate   std.error  statistic      p.value
-    ## 1 (Intercept)  8.301070693 0.182810285 45.4081164 7.881881e-64
-    ## 2  log(price) -0.548897230 0.168142075 -3.2644847 1.551515e-03
-    ## 3         mon -0.317545597 0.242448162 -1.3097464 1.936151e-01
-    ## 4        tues -0.683625817 0.205218636 -3.3312073 1.255447e-03
-    ## 5         wed -0.535288090 0.214712251 -2.4930487 1.449391e-02
-    ## 6       thurs  0.068269443 0.168733591  0.4045990 6.867323e-01
-    ## 7        time -0.001249897 0.002421495 -0.5161675 6.070033e-01
-    ##       conf.low    conf.high df       outcome
-    ## 1  7.937886154  8.664255231 90 log(quantity)
-    ## 2 -0.882940811 -0.214853650 90 log(quantity)
-    ## 3 -0.799211188  0.164119994 90 log(quantity)
-    ## 4 -1.091328456 -0.275923177 90 log(quantity)
-    ## 5 -0.961851454 -0.108724727 90 log(quantity)
-    ## 6 -0.266949287  0.403488173 90 log(quantity)
-    ## 7 -0.006060618  0.003560825 90 log(quantity)
+<table class="table" style="margin-left: auto; margin-right: auto;">
 
-## 2SLS with average wave height instrument
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+term
+
+</th>
+
+<th style="text-align:right;">
+
+estimate
+
+</th>
+
+<th style="text-align:right;">
+
+std.error
+
+</th>
+
+<th style="text-align:right;">
+
+p.value
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td style="text-align:left;">
+
+(Intercept)
+
+</td>
+
+<td style="text-align:right;">
+
+8.301
+
+</td>
+
+<td style="text-align:right;">
+
+0.183
+
+</td>
+
+<td style="text-align:right;">
+
+0.000
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+log(price)
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.549
+
+</td>
+
+<td style="text-align:right;">
+
+0.168
+
+</td>
+
+<td style="text-align:right;">
+
+0.002
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+mon
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.318
+
+</td>
+
+<td style="text-align:right;">
+
+0.242
+
+</td>
+
+<td style="text-align:right;">
+
+0.194
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+tues
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.684
+
+</td>
+
+<td style="text-align:right;">
+
+0.205
+
+</td>
+
+<td style="text-align:right;">
+
+0.001
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+wed
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.535
+
+</td>
+
+<td style="text-align:right;">
+
+0.215
+
+</td>
+
+<td style="text-align:right;">
+
+0.014
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+thurs
+
+</td>
+
+<td style="text-align:right;">
+
+0.068
+
+</td>
+
+<td style="text-align:right;">
+
+0.169
+
+</td>
+
+<td style="text-align:right;">
+
+0.687
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+time
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.001
+
+</td>
+
+<td style="text-align:right;">
+
+0.002
+
+</td>
+
+<td style="text-align:right;">
+
+0.607
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</td>
+
+<td>
 
 ``` r
-fs_waveheight <- lm_robust(log(price) ~ wave2 + mon + tues + wed + thurs + time, 
+fs_waveheight <- lm_robust(log(price) ~ wave2 + 
+                             mon + tues + wed + thurs + time, 
                            data = fish)
 
-fs_waveheight %>% 
-  tidy() %>% 
-  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+tidy_round(fs_waveheight)
 ```
 
-    ##          term estimate std.error   statistic      p.value     conf.low
-    ## 1 (Intercept)   -0.706     0.159 -4.43699065 2.577025e-05 -1.021587346
-    ## 2       wave2    0.103     0.021  4.95586761 3.360941e-06  0.061579010
-    ## 3         mon   -0.036     0.117 -0.31191215 7.558287e-01 -0.268846439
-    ## 4        tues    0.007     0.126  0.05742528 9.543337e-01 -0.242417823
-    ## 5         wed    0.083     0.116  0.71376882 4.772171e-01 -0.147141485
-    ## 6       thurs    0.136     0.107  1.27705837 2.048666e-01 -0.075640254
-    ## 7        time   -0.002     0.001 -1.60962027 1.109830e-01 -0.004706456
-    ##       conf.high df    outcome
-    ## 1 -0.3896859280 90 log(price)
-    ## 2  0.1439835212 90 log(price)
-    ## 3  0.1958829343 90 log(price)
-    ## 4  0.2568492520 90 log(price)
-    ## 5  0.3121576426 90 log(price)
-    ## 6  0.3478917181 90 log(price)
-    ## 7  0.0004934493 90 log(price)
+<table class="table" style="margin-left: auto; margin-right: auto;">
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+term
+
+</th>
+
+<th style="text-align:right;">
+
+estimate
+
+</th>
+
+<th style="text-align:right;">
+
+std.error
+
+</th>
+
+<th style="text-align:right;">
+
+p.value
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td style="text-align:left;">
+
+(Intercept)
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.706
+
+</td>
+
+<td style="text-align:right;">
+
+0.159
+
+</td>
+
+<td style="text-align:right;">
+
+0.000
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+wave2
+
+</td>
+
+<td style="text-align:right;">
+
+0.103
+
+</td>
+
+<td style="text-align:right;">
+
+0.021
+
+</td>
+
+<td style="text-align:right;">
+
+0.000
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+mon
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.036
+
+</td>
+
+<td style="text-align:right;">
+
+0.117
+
+</td>
+
+<td style="text-align:right;">
+
+0.756
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+tues
+
+</td>
+
+<td style="text-align:right;">
+
+0.007
+
+</td>
+
+<td style="text-align:right;">
+
+0.126
+
+</td>
+
+<td style="text-align:right;">
+
+0.954
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+wed
+
+</td>
+
+<td style="text-align:right;">
+
+0.083
+
+</td>
+
+<td style="text-align:right;">
+
+0.116
+
+</td>
+
+<td style="text-align:right;">
+
+0.477
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+thurs
+
+</td>
+
+<td style="text-align:right;">
+
+0.136
+
+</td>
+
+<td style="text-align:right;">
+
+0.107
+
+</td>
+
+<td style="text-align:right;">
+
+0.205
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+time
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.002
+
+</td>
+
+<td style="text-align:right;">
+
+0.001
+
+</td>
+
+<td style="text-align:right;">
+
+0.111
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</td>
+
+</tr>
+
+</table>
 
 ``` r
 linearHypothesis(fs_waveheight, "wave2 = 0")
@@ -183,57 +1105,755 @@ linearHypothesis(fs_waveheight, "wave2 = 0")
 ``` r
 iv_robust(log(quantity) ~ log(price) + mon + tues + wed + thurs + time | 
             wave2 + mon + tues + wed + thurs + time, 
-          data = fish) %>% 
-  tidy() %>% 
-  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+          data = fish, se_type = "classical") %>% 
+  tidy_round()
 ```
 
-    ##          term estimate std.error  statistic      p.value     conf.low
-    ## 1 (Intercept)    8.271     0.189 43.8000031 1.760387e-62  7.895895167
-    ## 2  log(price)   -0.960     0.477 -2.0151014 4.687770e-02 -1.907145891
-    ## 3         mon   -0.322     0.245 -1.3113373 1.930795e-01 -0.809047039
-    ## 4        tues   -0.687     0.212 -3.2473773 1.637331e-03 -1.107697310
-    ## 5         wed   -0.520     0.224 -2.3168421 2.278222e-02 -0.965537191
-    ## 6       thurs    0.106     0.184  0.5724644 5.684347e-01 -0.260699986
-    ## 7        time   -0.003     0.003 -0.9795822 3.299183e-01 -0.008757412
-    ##      conf.high df       outcome
-    ## 1  8.646209694 90 log(quantity)
-    ## 2 -0.013547539 90 log(quantity)
-    ## 3  0.165669372 90 log(quantity)
-    ## 4 -0.266806114 90 log(quantity)
-    ## 5 -0.074076407 90 log(quantity)
-    ## 6  0.471759797 90 log(quantity)
-    ## 7  0.002973284 90 log(quantity)
+<table class="table" style="margin-left: auto; margin-right: auto;">
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+term
+
+</th>
+
+<th style="text-align:right;">
+
+estimate
+
+</th>
+
+<th style="text-align:right;">
+
+std.error
+
+</th>
+
+<th style="text-align:right;">
+
+p.value
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td style="text-align:left;">
+
+(Intercept)
+
+</td>
+
+<td style="text-align:right;">
+
+8.271
+
+</td>
+
+<td style="text-align:right;">
+
+0.210
+
+</td>
+
+<td style="text-align:right;">
+
+0.000
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+log(price)
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.960
+
+</td>
+
+<td style="text-align:right;">
+
+0.422
+
+</td>
+
+<td style="text-align:right;">
+
+0.025
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+mon
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.322
+
+</td>
+
+<td style="text-align:right;">
+
+0.233
+
+</td>
+
+<td style="text-align:right;">
+
+0.172
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+tues
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.687
+
+</td>
+
+<td style="text-align:right;">
+
+0.230
+
+</td>
+
+<td style="text-align:right;">
+
+0.004
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+wed
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.520
+
+</td>
+
+<td style="text-align:right;">
+
+0.227
+
+</td>
+
+<td style="text-align:right;">
+
+0.025
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+thurs
+
+</td>
+
+<td style="text-align:right;">
+
+0.106
+
+</td>
+
+<td style="text-align:right;">
+
+0.230
+
+</td>
+
+<td style="text-align:right;">
+
+0.647
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+time
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.003
+
+</td>
+
+<td style="text-align:right;">
+
+0.003
+
+</td>
+
+<td style="text-align:right;">
+
+0.354
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
 
 ## 2SLS with wind speed instrument
+
+<table>
+
+<tr>
+
+<td>
 
 ### First-stage
 
 ``` r
-fs_waveheight <- lm_robust(log(price) ~ speed3 + mon + tues + wed + thurs + time, 
+fs_waveheight <- lm_robust(log(price) ~ speed3 + mon + 
+                             tues + wed + thurs + time, 
                            data = fish)
 
-fs_waveheight %>% 
-  tidy() %>% 
-  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
+tidy_round(fs_waveheight)
 ```
 
-    ##          term estimate std.error   statistic    p.value     conf.low
-    ## 1 (Intercept)   -0.444     0.182 -2.43471259 0.01687678 -0.805612535
-    ## 2      speed3    0.017     0.006  2.62374293 0.01021550  0.004052217
-    ## 3         mon   -0.031     0.130 -0.24155804 0.80967215 -0.288689582
-    ## 4        tues   -0.086     0.131 -0.65714680 0.51276356 -0.345413087
-    ## 5         wed   -0.001     0.130 -0.01040228 0.99172335 -0.258693692
-    ## 6       thurs    0.098     0.126  0.78182397 0.43637003 -0.151320847
-    ## 7        time   -0.003     0.001 -2.08707752 0.03970861 -0.005922261
-    ##       conf.high df    outcome
-    ## 1 -0.0816361598 90 log(price)
-    ## 2  0.0293256012 90 log(price)
-    ## 3  0.2260971126 90 log(price)
-    ## 4  0.1737017071 90 log(price)
-    ## 5  0.2559987482 90 log(price)
-    ## 6  0.3477041456 90 log(price)
-    ## 7 -0.0001459619 90 log(price)
+<table class="table" style="margin-left: auto; margin-right: auto;">
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+term
+
+</th>
+
+<th style="text-align:right;">
+
+estimate
+
+</th>
+
+<th style="text-align:right;">
+
+std.error
+
+</th>
+
+<th style="text-align:right;">
+
+p.value
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td style="text-align:left;">
+
+(Intercept)
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.444
+
+</td>
+
+<td style="text-align:right;">
+
+0.182
+
+</td>
+
+<td style="text-align:right;">
+
+0.017
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+speed3
+
+</td>
+
+<td style="text-align:right;">
+
+0.017
+
+</td>
+
+<td style="text-align:right;">
+
+0.006
+
+</td>
+
+<td style="text-align:right;">
+
+0.010
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+mon
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.031
+
+</td>
+
+<td style="text-align:right;">
+
+0.130
+
+</td>
+
+<td style="text-align:right;">
+
+0.810
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+tues
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.086
+
+</td>
+
+<td style="text-align:right;">
+
+0.131
+
+</td>
+
+<td style="text-align:right;">
+
+0.513
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+wed
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.001
+
+</td>
+
+<td style="text-align:right;">
+
+0.130
+
+</td>
+
+<td style="text-align:right;">
+
+0.992
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+thurs
+
+</td>
+
+<td style="text-align:right;">
+
+0.098
+
+</td>
+
+<td style="text-align:right;">
+
+0.126
+
+</td>
+
+<td style="text-align:right;">
+
+0.436
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+time
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.003
+
+</td>
+
+<td style="text-align:right;">
+
+0.001
+
+</td>
+
+<td style="text-align:right;">
+
+0.040
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</td>
+
+<td>
+
+### 2SLS
+
+``` r
+iv_robust(log(quantity) ~ log(price) + mon + tues + 
+            wed + thurs + time | 
+            speed3 + mon + tues + wed + thurs + time , 
+          data = fish, se_type = "classical") %>% 
+  tidy_round()
+```
+
+<table class="table" style="margin-left: auto; margin-right: auto;">
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+term
+
+</th>
+
+<th style="text-align:right;">
+
+estimate
+
+</th>
+
+<th style="text-align:right;">
+
+std.error
+
+</th>
+
+<th style="text-align:right;">
+
+p.value
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td style="text-align:left;">
+
+(Intercept)
+
+</td>
+
+<td style="text-align:right;">
+
+8.198
+
+</td>
+
+<td style="text-align:right;">
+
+0.268
+
+</td>
+
+<td style="text-align:right;">
+
+0.000
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+log(price)
+
+</td>
+
+<td style="text-align:right;">
+
+\-1.960
+
+</td>
+
+<td style="text-align:right;">
+
+0.907
+
+</td>
+
+<td style="text-align:right;">
+
+0.033
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+mon
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.332
+
+</td>
+
+<td style="text-align:right;">
+
+0.292
+
+</td>
+
+<td style="text-align:right;">
+
+0.259
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+tues
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.696
+
+</td>
+
+<td style="text-align:right;">
+
+0.288
+
+</td>
+
+<td style="text-align:right;">
+
+0.018
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+wed
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.482
+
+</td>
+
+<td style="text-align:right;">
+
+0.286
+
+</td>
+
+<td style="text-align:right;">
+
+0.095
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+thurs
+
+</td>
+
+<td style="text-align:right;">
+
+0.196
+
+</td>
+
+<td style="text-align:right;">
+
+0.295
+
+</td>
+
+<td style="text-align:right;">
+
+0.509
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+time
+
+</td>
+
+<td style="text-align:right;">
+
+\-0.007
+
+</td>
+
+<td style="text-align:right;">
+
+0.005
+
+</td>
+
+<td style="text-align:right;">
+
+0.161
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</td>
+
+</tr>
+
+</table>
 
 ``` r
 linearHypothesis(fs_waveheight, "speed3 = 0")
@@ -252,30 +1872,3 @@ linearHypothesis(fs_waveheight, "speed3 = 0")
     ## 2     90  1 6.884   0.008697 **
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-### 2SLS
-
-``` r
-iv_robust(log(quantity) ~ log(price) + mon + tues + wed + thurs + time | 
-            speed3 + mon + tues + wed + thurs + time , 
-          data = fish) %>% 
-  tidy() %>% 
-  mutate_at(vars(estimate, std.error), .funs = ~ round(., 3))
-```
-
-    ##          term estimate std.error  statistic      p.value    conf.low
-    ## 1 (Intercept)    8.198     0.246 33.2917122 2.213221e-52  7.70890976
-    ## 2  log(price)   -1.960     1.021 -1.9198010 5.805050e-02 -3.98797288
-    ## 3         mon   -0.332     0.291 -1.1398530 2.573720e-01 -0.90997446
-    ## 4        tues   -0.696     0.283 -2.4603594 1.578914e-02 -1.25810960
-    ## 5         wed   -0.482     0.282 -1.7101369 9.068599e-02 -1.04237238
-    ## 6       thurs    0.196     0.269  0.7290697 4.678521e-01 -0.33816525
-    ## 7        time   -0.007     0.005 -1.3974585 1.657112e-01 -0.01666391
-    ##      conf.high df       outcome
-    ## 1  8.687352585 90 log(quantity)
-    ## 2  0.068268715 90 log(quantity)
-    ## 3  0.246467042 90 log(quantity)
-    ## 4 -0.134010089 90 log(quantity)
-    ## 5  0.077974013 90 log(quantity)
-    ## 6  0.730253517 90 log(quantity)
-    ## 7  0.002901377 90 log(quantity)
