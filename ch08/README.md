@@ -65,7 +65,7 @@ linearHypothesis(model2, "nearc4 = 0")
 
 ## Estimate OLS and 2SLS effects
 
-The formula syntax for \`estimatr::iv\_robust()\`\`\` is:
+The formula syntax for `estimatr::iv_robust()` is:
 
 ``` r
 iv_robust(Y ~ D + X | Z + X, data = dat)
